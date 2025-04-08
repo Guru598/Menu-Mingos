@@ -2,9 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-
-
+const Menu = require('./MenuApi');
 const app = express();
+
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -45,6 +45,42 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", orderSchema);
 
+// Schema for Menu Items
+const menuSchema = new mongoose.Schema({
+    item_id: Number,
+    item_name: String,
+    category: String,
+    price: Number,
+    image_url: String,
+    available: { type: Boolean, default: true },
+  });
+  
+  const MenuItem = mongoose.model("MenuItem", menuSchema);
+  
+  console.log("Menu is:", Menu);
+  //menuseeder
+  const seedMenu = async () => {
+    try {
+      const count = await MenuItem.countDocuments();
+      if (count === 0) {
+        const itemsToInsert = Menu.map(item => ({
+          item_id: item.item_id,
+          item_name: item.item_name,
+          category: item.category,
+          price: item.price,
+          image_url: item.image_url,
+          available: true, // default value
+        }));
+        await MenuItem.insertMany(itemsToInsert);
+        console.log("Menu seeded with default items.");
+      }
+    } catch (err) {
+      console.error("Error seeding menu:", err);
+    }
+  };
+  
+  seedMenu();
+
 // Register route
 app.post("/register", async (req, res) => {
     const { username, userid, email, password } = req.body;
@@ -67,6 +103,26 @@ app.post("/login", async (req, res) => {
         res.status(400).send("Invalid credentials");
     }
 });
+
+app.put('/api/menu/:id', async (req, res) => {
+    try {
+      const { available } = req.body;
+      // Find by item_id since your default data uses item_id
+      const updatedItem = await MenuItem.findOneAndUpdate(
+        { item_id: Number(req.params.id) },
+        { available },
+        { new: true }
+      );
+      if (!updatedItem) {
+        return res.status(404).send("Item not found");
+      }
+      res.json(updatedItem);
+    } catch (err) {
+      console.error("Error updating menu item:", err);
+      res.status(500).send("Failed to update menu item");
+    }
+  });
+
 
 // Route to create a new order from cart items
 app.post("/order", async (req, res) => {
@@ -121,6 +177,30 @@ app.delete("/cart/:id", async (req, res) => {
     res.send({ message: "Item removed" });
 });
 
+//new code 
+app.get('/api/menu', async (req, res) => {
+    try {
+      const menuItems = await MenuItem.find();
+      res.json(menuItems);
+    } catch (err) {
+      console.error("Error fetching menu:", err);
+      res.status(500).send("Failed to fetch menu items");
+    }
+  });
+  
+
+
 app.listen(5000, () => {
     console.log("Server running on port 5000");
+});
+
+
+// Add this after other routes in server.js
+app.get("/orders", async (req, res) => {
+    try {
+        const orders = await Order.find().sort({ order_number: -1 });
+        res.send(orders);
+    } catch (err) {
+        res.status(500).send("Error fetching orders");
+    }
 });
