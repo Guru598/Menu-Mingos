@@ -8,6 +8,8 @@ import Welcome from './components/Welcome';
 import Signup from './components/SignUp';
 import Login from './components/Login';
 import { UserProvider } from './context/UserContext';
+import Admin from './components/Admin'; // import Admin component
+
 
 const App = () => {
   const theme = {
@@ -45,6 +47,7 @@ const App = () => {
           <Route path='/restaurant' element={<Restaurant />} /> 
           <Route path='/orders' element={<Orders />} />
           <Route path='/token' element={<Token />} />
+          <Route path='/admin' element={<Admin />} />
 
         </Routes>
       </Router> 
